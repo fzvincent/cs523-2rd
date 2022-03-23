@@ -2,7 +2,7 @@
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
+import numpy as np
 from bitarray import bitarray
 import random as rd
 import math
@@ -10,18 +10,18 @@ import matplotlib.pyplot as plt1
 from pylab import *
 import colorsys
 
-rd.seed(566)
+rd.seed(555)
 # 445
 # 50
-numeracids =12
+numeracids =15
 punishment = 1
 bits = 6*numeracids
 viruses = 10
 
-islands = 2
-mutationRate = .3
-maxMuation = 10
-initPop = 50
+islands = 1
+mutationRate = .1
+maxMuation = 15
+initPop = 100
 make = 50
 keepBest=10
 keepnext =50
@@ -61,6 +61,15 @@ val = {'guu', 'guc', 'gua', 'gug'}
 stop = {'uag', 'uga', 'uaa'}
 
 all = [ala,arg,asn,asp,cys,gln,glu,gly,his,lle,start,leu,lys,met,phe,pro,ser,thr,trp,tyr,val,stop]
+
+# all1 = ['ala','arg','asn','asp','cys','gln','glu','gly','his','lle','start','leu','lys','met','phe','pro','ser','thr','trp','tyr','val','stop']
+# all_dist={all1[i]:i for i in range(len(all))}
+# all_distance=np.zeros([len(all),len(all)])
+# for i in range(len(all)):
+#     for j in range(i,len(all)):
+#         if all1[i]!=all1[j]:
+#             distance=3
+#             all_dist[i,j] = 0
 mapacug= {}
 
 for x in all:
@@ -117,27 +126,18 @@ class bitArray:
         self.fitness = 10000000000000000
         loction = rd.randint(0, self.size / 2 - 1)
         self.array[loction * 2:loction * 2 + 2] = self.makeArray(2)
-
         return self
-
-
 
     def calcFitness2(self, others):
         self.valid = True
-
         arraySum = min(list(map(lambda x: sum((self.array.__xor__(x.array)).tolist()), others)))
         self.fitness = math.pow(arraySum, punishment)
-
-
-
-
         return self
 
     def calcFitness(self, others):
         return self.calcFitness1(others)
 
     def calcFitness1(self, others):
-
         self.valid = True
         y = [acugbit[self.array[i:i + 2].to01()] for i in range(0, bits, 2)]
         z = [''.join(y[i:i + 3]) for i in range(0,  len(y), 3)]
@@ -154,9 +154,14 @@ class bitArray:
         return self.array
 
 
+
 def makePopulation(amount, size):
-    #return [bitArray(size) for _ in range(amount)]
-    return [np.random.choice([0,1],size=size) for _ in range(amount)]
+    return [bitArray(size) for _ in range(amount)]
+
+    # a=np.random.choice([0,1],size=size)
+    # b=np.array2string(a,separator='')
+    # c=b[1:-1]
+    # return [bitArray(c) for _ in range(amount)]
 
 
 virus = makePopulation(viruses, bits)
@@ -188,7 +193,7 @@ def pprint(pop,island):
     return mean
 
 
-def tick(pop, count, popNumber):
+def tick(pop, iteration, popNumber):
     newClones = [ind.clone() for ind in pop]
 
     buildinglist = list()
@@ -199,13 +204,13 @@ def tick(pop, count, popNumber):
     for mutant in buildinglist:
         counter = 0
         while (rd.random() < mutationRate) and counter < maxMuation:
-            mutant.flip(count)
+            mutant.flip(iteration)
             counter += 1
     # bcell = 0
     for i in list(filter(lambda x: not x.valid, buildinglist)):
         i.calcFitness(bitVirus)
         # bcell += 1
-        actions[popNumber].add((i.parentid, i.id, count, i.fitness, i.parent))
+        actions[popNumber].add((i.parentid, i.id, iteration, i.fitness, i.parent))
 
     mean = pprint(buildinglist,popNumber)
 
@@ -215,12 +220,12 @@ def tick(pop, count, popNumber):
     return offspring[0:keepnext]
 
 
-it = 0
+iteration = 0
 fitsMin = 1000000000
 
-while it < 42 and fitsMin != 0:
-    populations = [tick(pop, it, popNumber) for pop, popNumber in zip(populations, range(islands))]
-    it += 1
+while iteration < 42 and fitsMin != 0:
+    populations = [tick(pop, iteration, popNumber) for pop, popNumber in zip(populations, range(islands))]
+    iteration += 1
     # if(shareInfo):
     #     populations = [tick(pop, it) for pop in populations]
 
@@ -255,7 +260,7 @@ plt.show()
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 for island in range(islands):
-    best_ind = min(list(filter(lambda y: y[2] == it - 1, actions[island])), key=lambda x: x[3])
+    best_ind = min(list(filter(lambda y: y[2] == iteration - 1, actions[island])), key=lambda x: x[3])
     # avgList.append(best_ind[4])
     bloodlined = list()
     last = best_ind
