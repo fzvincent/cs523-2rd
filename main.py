@@ -8,18 +8,22 @@ import colorsys
 # rd.seed(566)
 # 445
 # 50
+totalCapacity=100
+
 numeracids =12
 punishment = 1
 bits = 6*numeracids
 viruses = 8
 
-islands = 2
-mutationRate = .3
-maxMuation = 10
-initPop = 50
-make = 50
-keepBest=10
-keepnext =50
+islands = 3
+mutationRate = .1
+maxMuation = numeracids*3*mutationRate
+capacity = math.ceil(totalCapacity/islands)
+
+eliteRate=0.1
+
+
+
 shareInfo = False
 best = True
 acug = {'a':bitarray('00'),
@@ -152,7 +156,7 @@ def makePopulation(amount, size):
 virus = makePopulation(viruses, bits)
 bitVirus = list(map(lambda y:  [ ''.join( y[i:i+3]) for i in range(0, len(y), 3)],  map(lambda x: [acugbit[x.array[i:i + 2].to01()] for i in range(0, bits, 2)], virus)))
 
-populations = [makePopulation(initPop, bits) for _ in range(islands)]
+populations = [makePopulation(capacity, bits) for _ in range(islands)]
 
 # avgList =list()
 avgList = [list() for _ in range(islands)]
@@ -182,16 +186,16 @@ def tick(pop, count, popNumber):
     newClones = [ind.clone() for ind in pop]
 
     buildinglist = list()
-    buildinglist+=newClones[0:keepBest]
-    while len(buildinglist) < make:
+
+    buildinglist+=newClones[0:max(1,math.ceil(eliteRate*capacity))]
+    while len(buildinglist) < capacity:
         buildinglist.append(rd.choice(newClones))
 
-    for mutant in buildinglist:
+    for mutant in buildinglist[max(1,math.ceil(eliteRate*capacity)):capacity]:
         counter = 0
         while (rd.random() < mutationRate) and counter < maxMuation:
             mutant.flip(count)
             counter += 1
-    # bcell = 0
 
 
     for i in list(filter(lambda x: not x.valid, buildinglist)):
@@ -204,7 +208,7 @@ def tick(pop, count, popNumber):
     avgList[popNumber].append(mean)
     # offspring = sorted((filter(lambda x: x.fitness <= mean, buildinglist)), key=lambda x: x.fitness)
     offspring = sorted(buildinglist, key=lambda x: x.fitness)
-    return offspring[0:keepnext]
+    return offspring[0:capacity]
 
 
 it = 0
