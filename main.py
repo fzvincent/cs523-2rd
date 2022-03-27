@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt1
 from pylab import *
 import colorsys
-
+import numpy as np
 # rd.seed(566)
 # 445
 # 50
@@ -15,7 +15,7 @@ punishment = 1
 bits = 6*numeracids
 viruses = 8
 
-islands = 3
+islands = 2
 mutationRate = .1
 maxMuation = numeracids*3*mutationRate
 capacity = math.ceil(totalCapacity/islands)
@@ -133,7 +133,7 @@ class bitArray:
         self.valid = True
         y = [acugbit[self.array[i:i + 2].to01()] for i in range(0, bits, 2)]
         z = [''.join(y[i:i + 3]) for i in range(0,  len(y), 3)]
-        print(list(map(lambda x: sum(list(map(lambda q: test111((q[1]), q[0]), zip(x, z)))), others)))
+        #print(list(map(lambda x: sum(list(map(lambda q: test111((q[1]), q[0]), zip(x, z)))), others)))
         arrayMin = min(
             zip(list(map(lambda x: sum(list(map(lambda q: test111((q[1]), q[0]), zip(x, z)))), others)),
                 range(viruses)),
@@ -173,11 +173,11 @@ def pprint(pop,island):
     std = abs(sum2 / length - mean ** 2) ** 0.5
     min_ = min(fits)
     max_ =max(fits)
-    print("  Min %s" % min_)
-    print("  Max %s" % max_)
-    print("  Avg %s" % mean)
-    print("  Std %s" % std)
-    print("  unique blood lines %s" % par)
+    # print("  Min %s" % min_)
+    # print("  Max %s" % max_)
+    # print("  Avg %s" % mean)
+    # print("  Std %s" % std)
+    # print("  unique blood lines %s" % par)
     infolist[island].append((min_,max_,mean))
     return mean
 
@@ -187,13 +187,14 @@ def tick(pop, count, popNumber):
 
     buildinglist = list()
 
-    buildinglist+=newClones[0:max(1,math.ceil(eliteRate*capacity))]
+    buildinglist+=newClones[0:max(1,int(eliteRate*capacity))]
     while len(buildinglist) < capacity:
         buildinglist.append(rd.choice(newClones))
 
-    for mutant in buildinglist[max(1,math.ceil(eliteRate*capacity)):capacity]:
+    for mutant in buildinglist[max(1,int(eliteRate*capacity)):capacity]:
         counter = 0
-        while (rd.random() < mutationRate) and counter < maxMuation:
+        #while (rd.random() < mutationRate) and counter < maxMuation:
+        while (rd.random() < mutationRate):
             mutant.flip(count)
             counter += 1
 
@@ -214,99 +215,155 @@ def tick(pop, count, popNumber):
 it = 0
 fitsMin = 1000000000
 
-while it < 42 and fitsMin != 0:
-    populations = [tick(pop, it, popNumber) for pop, popNumber in zip(populations, range(islands))]
-    it += 1
-    # if(shareInfo):
-    #     populations = [tick(pop, it) for pop in populations]
-
-
-
-# print(bloodlined)
+# while it < 42 and fitsMin != 0:
+#     populations = [tick(pop, it, popNumber) for pop, popNumber in zip(populations, range(islands))]
+#     it += 1
 #
-# print(actions[0])
+# min(min([list(map(lambda  x : x[0], infolist[island])) for island in range(islands)]))
 
-# fig =plt1.figure()
+repTimes=30
+mTime=10
+eliteTimes=6
 
-for island in range(islands):
-    print(infolist[island])
-    r  = range(len( infolist[island]))
-    color= colorsys.hsv_to_rgb((island+1)/islands,(island+1)/islands,
-                                          .5)
-    plt.plot(r,list(map(lambda  x : x[0], infolist[island])),color=color,linestyle='--' )
-    plt.plot(r,list(map(lambda  x : x[1], infolist[island])),color=color,linestyle='--' )
+mutationRateList=np.logspace(math.log10(0.01),math.log10(0.90),mTime,endpoint=True)
+eliteList=np.logspace(math.log10(0.10),math.log10(0.90),eliteTimes,endpoint=True)
+islandsList=[1,2,4,8,16]
 
-    plt.fill_between(r,list(map(lambda  x : x[0], infolist[island])), list(map(lambda  x : x[1], infolist[island])),color=color,alpha=0.05)
-    # ax.fill_between(
-    #     time, income, expenses, where=(income <= expenses),
-    #     interpolate=True, color="red", alpha=0.25,
-    #     label="Negative"
-    # )
-    plt.plot(r,list(map(lambda  x : x[2], infolist[island])),color=color  )
-plt.show()
+a=np.zeros([len(islandsList),mTime,eliteTimes,repTimes])
+
+for i in range(len(islandsList)):
+    print('island'+str(islandsList[i]))
+    islands = islandsList[i]
+    capacity = max(5,math.ceil(totalCapacity / islands))
+    for j in range(len(mutationRateList)):
+        mutationRate=mutationRateList[j]
+        print('mutation' + str(mutationRateList[j]))
+        for k in range(len(eliteList)):
+            eliteRate=eliteList[k]
+            print('elite' + str(eliteList[k]))
+            for r in range(repTimes):
+                avgList = [list() for _ in range(islands)]
+                actions = [set() for _ in range(islands)]
+                infolist = [list() for _ in range(islands)]
+                virus = makePopulation(viruses, bits)
+                bitVirus = list(map(lambda y: [''.join(y[i:i + 3]) for i in range(0, len(y), 3)],
+                                    map(lambda x: [acugbit[x.array[i:i + 2].to01()] for i in range(0, bits, 2)],
+                                        virus)))
+
+                populations = [makePopulation(capacity, bits) for _ in range(islands)]
+
+                fitsMin = 1000000000
+                it = 0
+                while it < 42 and fitsMin != 0:
+                    populations = [tick(pop, it, popNumber) for pop, popNumber in zip(populations, range(islands))]
+                    it += 1
+                # if islands==4:
+                #     print(1)
+                #print(infolist)
+                temp=min(min([list(map(lambda x: x[0], infolist[island]))
+                              for island in range(islands)]))
+                #print(temp)
+                a[i,j,k,r]=a[i,j,k,r]+temp
+
+b=np.sum(a,axis=3)
+c=b/repTimes
+np.savez("mydata.npz",
+mutationRateList=mutationRateList,
+eliteList=eliteList,
+islandsList=islandsList,
+         a=a,
+         b=b,
+         c=c)
+a=a/repTimes
+print(1)
 
 
 
+# for island in range(islands):
+#     #print(infolist[island])
+#     r  = range(len( infolist[island]))
+#     color= colorsys.hsv_to_rgb((island+1)/islands,(island+1)/islands,
+#                                           .5)
+#     plt.plot(r,list(map(lambda  x : x[0], infolist[island])),color=color,linestyle='--' )
+#     plt.plot(r,list(map(lambda  x : x[1], infolist[island])),color=color,linestyle='--' )
+#
+#     plt.fill_between(r,list(map(lambda  x : x[0], infolist[island])), list(map(lambda  x : x[1], infolist[island])),color=color,alpha=0.05)
+#     # ax.fill_between(
+#     #     time, income, expenses, where=(income <= expenses),
+#     #     interpolate=True, color="red", alpha=0.25,
+#     #     label="Negative"
+#     # )
+#     plt.plot(r,list(map(lambda  x : x[2], infolist[island])),color=color,label="island-"+str(island) )
+#     plt.legend(fontsize ='x-large')
+#     plt.grid(True)
+#     plt.ylabel('Fitness',fontsize ='x-large')
+#     plt.xlabel('Iteration times',fontsize ='x-large')
+# plt.savefig('example.pdf')
+# plt.show()
 
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-for island in range(islands):
-    best_ind = min(list(filter(lambda y: y[2] == it - 1, actions[island])), key=lambda x: x[3])
-    # avgList.append(best_ind[4])
-    bloodlined = list()
-    last = best_ind
-    bloodlined.append(last)
-    for line in reversed(sorted(actions[island])):
-        if (last[0] == line[1]):
-            bloodlined.append(line)
-            last = line
-    yy = set(filter(lambda y: best_ind[4] == y[4], actions[island]))
 
-    if(best):
-        for x in actions[island]:
-            for y in actions[island]:
-                if  not( y in yy) and  not( x in yy):
-                    if 0 == y[0]:
-                        ax.scatter(y[3], avgList[island][y[2]], y[2])
-                    if y[1] == x[0]:
-                        if y[3] > x[3]:
-                            ax.plot3D([y[3], x[3]],
-                                      [avgList[island][y[2]], avgList[island][x[2]]],
-                                      [y[2], x[2]],
-                                      color=(.5, 0, .5), linewidth=1)
-                        else:
-                            ax.plot3D([y[3], x[3]],
-                                      [avgList[0][y[2]], avgList[0][x[2]]],
-                                      [y[2], x[2]],
-                                      color=(0, .5, .5), linewidth=1)
-        for x in yy:
-            for y in yy:
-                # last[0] == line[1]
-                if y[0] == x[1]:
-                    if y[3] > x[3]:
-                        ax.plot3D([y[3], x[3]],
-                                  [avgList[island][y[2]], avgList[island][x[2]]],
-                                  [y[2], x[2]],
-                                  color=(1, 0, 1), linewidth=.5)
-                    else:
-                        ax.plot3D([y[3], x[3]],
-                                  [avgList[island][y[2]], avgList[island][x[2]]],
-                                  [y[2], x[2]],
-                                  color=(0, 1, 1), linewidth=.5)
-
-    # print(len(avgList))
-    for x in yy:
-        for y in yy:
-            if y[0] == x[1]:
-                if (bloodlined.__contains__(x) and bloodlined.__contains__(y)):
-                    ax.plot3D([y[3], x[3]],
-                              [avgList[island][y[2]], avgList[island][x[2]]],
-                              [y[2], x[2]],
-                              color=(0, 0, 1))
-
-ax.set_ylabel('Avg fitness')
-ax.set_zlabel('iterations')
-ax.set_xlabel('Real fitness')
-
-ax.invert_zaxis()
-plt.show()
+#
+#
+#
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+# for island in range(islands):
+#     best_ind = min(list(filter(lambda y: y[2] == it - 1, actions[island])), key=lambda x: x[3])
+#     # avgList.append(best_ind[4])
+#     bloodlined = list()
+#     last = best_ind
+#     bloodlined.append(last)
+#     for line in reversed(sorted(actions[island])):
+#         if (last[0] == line[1]):
+#             bloodlined.append(line)
+#             last = line
+#     yy = set(filter(lambda y: best_ind[4] == y[4], actions[island]))
+#
+#     if(best):
+#         for x in actions[island]:
+#             for y in actions[island]:
+#                 if  not( y in yy) and  not( x in yy):
+#                     if 0 == y[0]:
+#                         ax.scatter(y[3], avgList[island][y[2]], y[2])
+#                     if y[1] == x[0]:
+#                         if y[3] > x[3]:
+#                             ax.plot3D([y[3], x[3]],
+#                                       [avgList[island][y[2]], avgList[island][x[2]]],
+#                                       [y[2], x[2]],
+#                                       color=(.5, 0, .5), linewidth=1)
+#                         else:
+#                             ax.plot3D([y[3], x[3]],
+#                                       [avgList[0][y[2]], avgList[0][x[2]]],
+#                                       [y[2], x[2]],
+#                                       color=(0, .5, .5), linewidth=1)
+#         for x in yy:
+#             for y in yy:
+#                 # last[0] == line[1]
+#                 if y[0] == x[1]:
+#                     if y[3] > x[3]:
+#                         ax.plot3D([y[3], x[3]],
+#                                   [avgList[island][y[2]], avgList[island][x[2]]],
+#                                   [y[2], x[2]],
+#                                   color=(1, 0, 1), linewidth=.5)
+#                     else:
+#                         ax.plot3D([y[3], x[3]],
+#                                   [avgList[island][y[2]], avgList[island][x[2]]],
+#                                   [y[2], x[2]],
+#                                   color=(0, 1, 1), linewidth=.5)
+#
+#     # print(len(avgList))
+#     for x in yy:
+#         for y in yy:
+#             if y[0] == x[1]:
+#                 if (bloodlined.__contains__(x) and bloodlined.__contains__(y)):
+#                     ax.plot3D([y[3], x[3]],
+#                               [avgList[island][y[2]], avgList[island][x[2]]],
+#                               [y[2], x[2]],
+#                               color=(0, 0, 1))
+#
+# ax.set_ylabel('Avg fitness')
+# ax.set_zlabel('iterations')
+# ax.set_xlabel('Real fitness')
+#
+# ax.invert_zaxis()
+# plt.show()
